@@ -10,7 +10,6 @@
         "Category": "Application Launchers",
         "Description": "BookOS Launchpad — paginated app grid with swipe, folders, search, blur and dark/light theme.",
         "EnabledByDefault": true,
-        "Icon": "launch",
         "Id": "com.bookos.launchpad",
         "License": "GPL-2.0+",
         "Name": "BookOS Launchpad",

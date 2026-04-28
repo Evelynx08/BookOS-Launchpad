@@ -507,6 +507,50 @@ Kicker.DashboardWindow {
         if (currentPage > 0) currentPage--
     }
 
+    // ── wheel/touchpad gesture state (root scope, plain JS object) ──────
+    property real _accumX: 0
+    property real _accumY: 0
+    property double _lastFire: 0
+
+    function processWheel(dx, dy) {
+        if (openFolder.visible || searching) return false
+        if (dx === 0 && dy === 0) return true
+
+        var now = Date.now()
+        // During cooldown: drop events so they don't pile into the next swipe
+        if (now - _lastFire < 180) {
+            _accumX = 0; _accumY = 0
+            return true
+        }
+
+        _accumX += dx
+        _accumY += dy
+        if (gestResetTimer) gestResetTimer.restart()
+
+        // Pick which axis dominates this gesture; horizontal wins on tie
+        var horizDominant = Math.abs(_accumX) >= Math.abs(_accumY) * 0.6
+        if (horizDominant) {
+            if (_accumX <= -35) {
+                goNextPage(); _accumX = 0; _accumY = 0; _lastFire = now
+                return true
+            }
+            if (_accumX >= 35) {
+                goPrevPage(); _accumX = 0; _accumY = 0; _lastFire = now
+                return true
+            }
+        }
+        // Vertical (mouse wheel; touchpad two-finger vertical)
+        if (_accumY <= -100) {
+            goNextPage(); _accumX = 0; _accumY = 0; _lastFire = now
+            return true
+        }
+        if (_accumY >= 100) {
+            goPrevPage(); _accumX = 0; _accumY = 0; _lastFire = now
+            return true
+        }
+        return true
+    }
+
     // ── main item ────────────────────────────────────────────────────────
     mainItem: Item {
         id: mainContent
@@ -526,6 +570,15 @@ Kicker.DashboardWindow {
         Connections {
             target: kicker
             function onReset() { root.reset() }
+        }
+
+        Timer {
+            id: gestResetTimer
+            interval: 250
+            onTriggered: {
+                root._accumX = 0
+                root._accumY = 0
+            }
         }
 
         // ── auto page-flip timer (during drag near edges) ─────────────
@@ -572,13 +625,7 @@ Kicker.DashboardWindow {
             propagateComposedEvents: true
             preventStealing: false
             z: -1
-            // also catches wheel events that didn't reach WheelHandler
-            onWheel: wheel => {
-                var usingPixel = (wheel.pixelDelta.x !== 0 || wheel.pixelDelta.y !== 0)
-                var dx = usingPixel ? wheel.pixelDelta.x : wheel.angleDelta.x
-                var dy = usingPixel ? wheel.pixelDelta.y : wheel.angleDelta.y
-                wheel.accepted = processWheel(dx, dy)
-            }
+            // wheel handled by global WheelHandler — don't double-process here
 
             property real pressX: 0
             property real pressY: 0

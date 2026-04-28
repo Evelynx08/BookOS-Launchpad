@@ -21,7 +21,7 @@ PlasmoidItem {
 
     Plasmoid.icon: Plasmoid.configuration.useCustomIcon && Plasmoid.configuration.customIcon
                    ? Plasmoid.configuration.customIcon
-                   : "launch"
+                   : Qt.resolvedUrl("../icons/launchpad.svg")
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground | PlasmaCore.Types.ConfigurableBackground
 
@@ -33,13 +33,32 @@ PlasmoidItem {
 
         readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
-        Layout.minimumWidth:  vertical ? -1 : Kirigami.Units.iconSizes.small
-        Layout.minimumHeight: vertical ?  Kirigami.Units.iconSizes.small : -1
+        // Explicit sizes to prevent collapsing to 0x0 in Plasma 6 panel layouts
+        implicitWidth: Kirigami.Units.iconSizes.small
+        implicitHeight: Kirigami.Units.iconSizes.small
+        Layout.minimumWidth: vertical ? -1 : Kirigami.Units.iconSizes.small
+        Layout.minimumHeight: vertical ? Kirigami.Units.iconSizes.small : -1
+        Layout.preferredWidth: implicitWidth
+        Layout.preferredHeight: implicitHeight
+
+        Image {
+            id: launchIconImage
+            anchors.fill: parent
+            source: Qt.resolvedUrl("../icons/launchpad.png")
+            visible: !(Plasmoid.configuration.useCustomIcon && Plasmoid.configuration.customIcon)
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
+
+            scale: mouseArea.pressed ? 0.85 : 1.0
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        }
 
         Kirigami.Icon {
             id: launchIcon
             anchors.fill: parent
-            source: kicker.Plasmoid.icon
+            source: Plasmoid.configuration.customIcon
+            visible: Plasmoid.configuration.useCustomIcon && Plasmoid.configuration.customIcon
             active: mouseArea.containsMouse
             smooth: true
 
