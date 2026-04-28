@@ -1,0 +1,119 @@
+/*
+    BookOS Launchpad — main.qml
+    SPDX-License-Identifier: GPL-2.0+
+*/
+
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import org.kde.plasma.plasmoid 2.0
+import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.private.kicker 0.1 as Kicker
+import org.kde.kirigami 2.20 as Kirigami
+
+PlasmoidItem {
+    id: kicker
+
+    signal reset
+
+    property var globalFavorites: rootModel.favoritesModel
+    property var systemFavorites: rootModel.systemFavoritesModel
+    property var rootModelObj:    rootModel
+
+    Plasmoid.icon: Plasmoid.configuration.useCustomIcon && Plasmoid.configuration.customIcon
+                   ? Plasmoid.configuration.customIcon
+                   : "launch"
+
+    Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground | PlasmaCore.Types.ConfigurableBackground
+
+    preferredRepresentation: compactRepresentation
+
+    // ── Compact icon for panel/dock ───────────────────────────────
+    compactRepresentation: Item {
+        id: compactRoot
+
+        readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+
+        Layout.minimumWidth:  vertical ? -1 : Kirigami.Units.iconSizes.small
+        Layout.minimumHeight: vertical ?  Kirigami.Units.iconSizes.small : -1
+
+        Kirigami.Icon {
+            id: launchIcon
+            anchors.fill: parent
+            source: kicker.Plasmoid.icon
+            active: mouseArea.containsMouse
+            smooth: true
+
+            scale: mouseArea.pressed ? 0.85 : 1.0
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        }
+
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            activeFocusOnTab: true
+
+            Keys.onPressed: function (event) {
+                switch (event.key) {
+                    case Qt.Key_Space:
+                    case Qt.Key_Enter:
+                    case Qt.Key_Return:
+                    case Qt.Key_Select:
+                        Plasmoid.activated()
+                        break
+                }
+            }
+
+            Accessible.name: Plasmoid.title
+            Accessible.role: Accessible.Button
+
+            onClicked: dashWindow.toggle()
+        }
+    }
+
+    // ── Dashboard window (created lazily) ─────────────────────────
+    readonly property Component dashWindowComponent: Qt.createComponent(Qt.resolvedUrl("./DashboardRepresentation.qml"), kicker)
+    readonly property Kicker.DashboardWindow dashWindow:
+        dashWindowComponent && dashWindowComponent.status === Component.Ready
+        ? dashWindowComponent.createObject(kicker) : null
+
+    Plasmoid.status: dashWindow && dashWindow.visible
+                     ? PlasmaCore.Types.RequiresAttentionStatus
+                     : PlasmaCore.Types.PassiveStatus
+
+    function action_menuedit() {
+        processRunner.runMenuEditor()
+    }
+
+    // ── Models ────────────────────────────────────────────────────
+    Kicker.RootModel {
+        id: rootModel
+        autoPopulate:             false
+        appNameFormat:            Plasmoid.configuration.appNameFormat
+        flat:                     true
+        sorted:                   Plasmoid.configuration.alphaSort
+        showSeparators:           false
+        appletInterface:          kicker
+        showAllApps:              true
+        showAllAppsCategorized:   false
+        showTopLevelItems:        false
+        showRecentApps:           false
+        showRecentDocs:           false
+        showPowerSession:         false
+        showFavoritesPlaceholder: false
+
+        Component.onCompleted: {
+            favoritesModel.initForClient("org.kde.plasma.kicker.favorites.instance-" + Plasmoid.id)
+        }
+    }
+
+    Kicker.DragHelper    { id: dragHelper    }
+    Kicker.ProcessRunner { id: processRunner }
+
+    Component.onCompleted: {
+        rootModel.refresh()
+        Plasmoid.activated.connect(function() {
+            if (dashWindow) dashWindow.toggle()
+        })
+    }
+}
