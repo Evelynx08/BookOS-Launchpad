@@ -55,8 +55,8 @@ Kicker.DashboardWindow {
     property color bgColor: cfg_darkTheme ? Qt.rgba(0.12, 0.12, 0.13, 0.92)
                                           : Qt.rgba(0.98, 0.98, 0.98, 0.92)
     property color overlayColor: cfg_darkTheme
-                                 ? Qt.rgba(0, 0, 0, 0.55)
-                                 : Qt.rgba(1, 1, 1, 0.45)
+                                 ? Qt.rgba(0.08, 0.08, 0.10, 0.88)
+                                 : Qt.rgba(0.96, 0.96, 0.98, 0.85)
     property color searchBg: cfg_darkTheme
                               ? Qt.rgba(1, 1, 1, 0.12)
                               : Qt.rgba(0, 0, 0, 0.08)

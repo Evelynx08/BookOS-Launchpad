@@ -19,7 +19,6 @@ Kirigami.FormLayout {
     property alias cfg_darkTheme:  darkThemeCheck.checked
     property alias cfg_blurRadius: blurSlider.value
     property alias cfg_appNameFormat: appNameFormatCombo.currentIndex
-
     // ── Icons ───────────────────────────────────────────────────────
     Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Icons") }
 
@@ -54,6 +53,8 @@ Kirigami.FormLayout {
 
     // ── Appearance ──────────────────────────────────────────────────
     Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Appearance") }
+
+
 
     CheckBox {
         id: darkThemeCheck

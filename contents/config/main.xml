@@ -38,6 +38,12 @@
       <default>true</default>
     </entry>
 
+    <!-- Look: bookos | win11 -->
+    <entry name="themeName" type="String">
+      <label>Theme look</label>
+      <default>bookos</default>
+    </entry>
+
     <!-- Blur radius (0 = no blur, handled at shell level via DashboardWindow) -->
     <entry name="blurRadius" type="Double">
       <label>Background blur radius</label>

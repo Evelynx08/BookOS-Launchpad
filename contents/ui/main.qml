@@ -27,17 +27,22 @@ PlasmoidItem {
 
     preferredRepresentation: compactRepresentation
 
+    readonly property string themeFile: "./DashboardRepresentation.qml"
+    
+    // ── VISTA PANTALLA COMPLETA ───────────────────────
+    fullRepresentation: compactRepresentation
+
     // ── Compact icon for panel/dock ───────────────────────────────
     compactRepresentation: Item {
         id: compactRoot
 
         readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
-        // Explicit sizes to prevent collapsing to 0x0 in Plasma 6 panel layouts
-        implicitWidth: Kirigami.Units.iconSizes.small
-        implicitHeight: Kirigami.Units.iconSizes.small
-        Layout.minimumWidth: vertical ? -1 : Kirigami.Units.iconSizes.small
-        Layout.minimumHeight: vertical ? Kirigami.Units.iconSizes.small : -1
+        // Tamaños fijos para evitar que el icono colapse a 0x0
+        implicitWidth:  Kirigami.Units.iconSizes.medium
+        implicitHeight: Kirigami.Units.iconSizes.medium
+        Layout.minimumWidth:  vertical ? -1 : Kirigami.Units.iconSizes.medium
+        Layout.minimumHeight: vertical ? Kirigami.Units.iconSizes.medium : -1
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitHeight
 
@@ -47,7 +52,8 @@ PlasmoidItem {
             source: Qt.resolvedUrl("../icons/launchpad.png")
             visible: !(Plasmoid.configuration.useCustomIcon && Plasmoid.configuration.customIcon)
             fillMode: Image.PreserveAspectFit
-            smooth: true
+            sourceSize.width: 128
+            sourceSize.height: 128
             mipmap: true
 
             scale: mouseArea.pressed ? 0.85 : 1.0
@@ -86,25 +92,34 @@ PlasmoidItem {
             Accessible.name: Plasmoid.title
             Accessible.role: Accessible.Button
 
-            onClicked: dashWindow.toggle()
+            onClicked: {
+                if (dashWindow) {
+                    dashWindow.toggle() // Pantalla completa antigua
+                }
+            }
         }
     }
 
-    // ── Dashboard window (created lazily) ─────────────────────────
-    readonly property Component dashWindowComponent: Qt.createComponent(Qt.resolvedUrl("./DashboardRepresentation.qml"), kicker)
-    readonly property Kicker.DashboardWindow dashWindow:
-        dashWindowComponent && dashWindowComponent.status === Component.Ready
-        ? dashWindowComponent.createObject(kicker) : null
+    // ── Dashboard window (Solo para BookOS Theme) ───────
+    property Component dashWindowComponent: null
+    property var dashWindow: null
 
-    Plasmoid.status: dashWindow && dashWindow.visible
-                     ? PlasmaCore.Types.RequiresAttentionStatus
+    function _rebuildDashWindow() {
+        if (dashWindow) { dashWindow.destroy(); dashWindow = null }
+        dashWindowComponent = Qt.createComponent(Qt.resolvedUrl(themeFile), kicker)
+        if (dashWindowComponent && dashWindowComponent.status === Component.Ready) {
+            dashWindow = dashWindowComponent.createObject(kicker)
+        }
+    }
+
+    Plasmoid.status: (dashWindow && dashWindow.visible)
+                     ? PlasmaCore.Types.ActiveStatus
                      : PlasmaCore.Types.PassiveStatus
 
     function action_menuedit() {
         processRunner.runMenuEditor()
     }
 
-    // ── Models ────────────────────────────────────────────────────
     Kicker.RootModel {
         id: rootModel
         autoPopulate:             false
@@ -131,8 +146,12 @@ PlasmoidItem {
 
     Component.onCompleted: {
         rootModel.refresh()
+        _rebuildDashWindow()
         Plasmoid.activated.connect(function() {
-            if (dashWindow) dashWindow.toggle()
+            // Repara la tecla Meta (Windows)
+            if (dashWindow) {
+                dashWindow.toggle()
+            }
         })
     }
 }
